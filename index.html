@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Minimalist Flashcards</title>
+  <!-- Google Fonts: Inter & Newsreader for clean editorial warmth -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            alabaster: '#F9F8F6',
+            warmwhite: '#FFFFFF',
+            charcoal: '#1C1B18',
+            warmgray: '#6E6B63',
+            stoneborder: '#E6E3DC',
+            stonehover: '#F1EFEA',
+            espresso: '#161513',
+            espressosurface: '#201F1C',
+            espressomuted: '#9E9A90',
+            espressostone: '#32302B',
+            warmivory: '#F4F2ED',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom 3D Card Flip & Tactile Utilities */
+    .perspective-1200 {
+      perspective: 1200px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    .flip-transition {
+      transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* Subtle touch feedback */
+    .tap-scale {
+      transition: transform 0.14s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .tap-scale:active {
+      transform: scale(0.985);
+    }
+    /* Custom scrollbar for clean look */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(110, 107, 99, 0.25);
+      border-radius: 9999px;
+    }
+    /* Prevent pull-to-refresh accidental bounce during horizontal card swipe */
+    .study-swipe-zone {
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-alabaster text-charcoal dark:bg-espresso dark:text-warmivory min-h-screen flex flex-col transition-colors duration-200 selection:bg-charcoal selection:text-warmwhite dark:selection:bg-warmivory dark:selection:text-espresso">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-alabaster/90 dark:bg-espresso/90 backdrop-blur-md border-b border-stoneborder dark:border-espressostone">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <!-- Brand / Home Trigger -->
+      <button onclick="navigateHome()" class="flex items-center gap-2.5 min-h-[44px] text-left group focus:outline-none" aria-label="Go to Home">
+        <span class="font-semibold tracking-tight text-lg">Home</span>
+      </button>
+
+      <!-- Utility Controls: Theme Toggle & Backup/Settings -->
+      <div class="flex items-center gap-1.5">
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espressosurface transition-colors" aria-label="Toggle Dark Mode" title="Toggle Dark Mode">
+          <!-- Sun Icon (shown in dark mode) -->
+          <svg id="sunIcon" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <!-- Moon Icon (shown in light mode) -->
+          <svg id="moonIcon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+
+        <button onclick="openSettingsModal()" class="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espressosurface transition-colors" aria-label="Backup & Settings" title="Backup & Settings">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="appContainer" class="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col">
+    <!-- Dynamic Views Rendered via JavaScript -->
+  </main>
+
+  <!-- Toast Notification Banner -->
+  <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3">
+    <div id="toastMessage" class="px-4 py-2.5 rounded-full bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-medium shadow-lg flex items-center gap-2 whitespace-nowrap">
+    </div>
+  </div>
+
+  <!-- Modal Overlay (Used for Create/Rename Folder, Create/Rename/Move Deck, Settings, Confirmations) -->
+  <div id="modalBackdrop" class="fixed inset-0 z-40 bg-charcoal/40 dark:bg-black/60 backdrop-blur-[2px] hidden items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity" onclick="handleBackdropClick(event)">
+    <div id="modalPanel" class="w-full sm:max-w-md bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone rounded-t-2xl sm:rounded-2xl shadow-xl p-5 sm:p-6 transform transition-all" onclick="event.stopPropagation()">
+      <!-- Modal Content Injected Here -->
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * STATE MANAGEMENT & LOCALSTORAGE PERSISTENCE
+     * ============================================================================
+     */
+    const STORAGE_KEY = 'folio_flashcards_v1';
+    const THEME_KEY = 'folio_theme_v1';
+
+    // Default blank-slate state
+    let state = {
+      folders: [], // { id, name, createdAt }
+      decks: [],   // { id, folderId: string|null, name, createdAt }
+      cards: []    // { id, deckId, front, back, createdAt }
+    };
+
+    // Active Navigation & Study Session State
+    let nav = {
+      view: 'home',       // 'home' | 'folder' | 'deck' | 'study'
+      folderId: null,     // Active folder ID
+      deckId: null        // Active deck ID
+    };
+
+    let study = {
+      cards: [],          // Ordered array of card objects for current session
+      originalOrder: [],  // Unshuffled order for reset
+      index: 0,           // Current card index
+      isFlipped: false,   // Whether card is flipped to show secondary side
+      isShuffled: false,  // Shuffle active flag
+      startWithBack: false // Study orientation: false = Front first, true = Back first
+    };
+
+    // Load data from localStorage safely
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state.folders = Array.isArray(parsed.folders) ? parsed.folders : [];
+          state.decks = Array.isArray(parsed.decks) ? parsed.decks : [];
+          state.cards = Array.isArray(parsed.cards) ? parsed.cards : [];
+        }
+      } catch (err) {
+        console.error('Failed to parse localStorage state:', err);
+      }
+    }
+
+    // Save state to localStorage safely
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        showToast('Storage limit reached. Consider exporting a backup.');
+      }
+    }
+
+    // Generate clean unique IDs
+    function uid(prefix = 'id') {
+      return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    // Escape HTML to safely display user text
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * ============================================================================
+     * THEME MANAGEMENT (WARM LIGHT / ESPRESSO DARK)
+     * ============================================================================
+     */
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved ? saved === 'dark' : prefersDark;
+      applyTheme(isDark);
+    }
+
+    function applyTheme(isDark) {
+      const html = document.documentElement;
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+      if (isDark) {
+        html.classList.add('dark');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+      } else {
+        html.classList.remove('dark');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = !document.documentElement.classList.contains('dark');
+      localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+      applyTheme(isDark);
+    }
+
+    /**
+     * ============================================================================
+     * TOAST & MODAL HELPERS
+     * ============================================================================
+     */
+    let toastTimer = null;
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const textEl = document.getElementById('toastMessage');
+      textEl.textContent = msg;
+      container.classList.remove('opacity-0', 'translate-y-3');
+      container.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        container.classList.add('opacity-0', 'translate-y-3');
+        container.classList.remove('opacity-100', 'translate-y-0');
+      }, 2500);
+    }
+
+    function openModal(htmlContent) {
+      const backdrop = document.getElementById('modalBackdrop');
+      const panel = document.getElementById('modalPanel');
+      panel.innerHTML = htmlContent;
+      backdrop.classList.remove('hidden');
+      backdrop.classList.add('flex');
+      // Auto-focus first input if available
+      setTimeout(() => {
+        const input = panel.querySelector('input[type="text"], textarea');
+        if (input) {
+          input.focus();
+          if (input.value) input.select();
+        }
+      }, 40);
+    }
+
+    function closeModal() {
+      const backdrop = document.getElementById('modalBackdrop');
+      backdrop.classList.add('hidden');
+      backdrop.classList.remove('flex');
+    }
+
+    function handleBackdropClick(e) {
+      if (e.target.id === 'modalBackdrop') {
+        closeModal();
+      }
+    }
+
+    /**
+     * ============================================================================
+     * NAVIGATION & BREADCRUMBS
+     * ============================================================================
+     */
+    function navigateHome() {
+      nav = { view: 'home', folderId: null, deckId: null };
+      render();
+    }
+
+    function navigateFolder(folderId) {
+      const exists = state.folders.some(f => f.id === folderId);
+      if (!exists) return navigateHome();
+      nav = { view: 'folder', folderId, deckId: null };
+      render();
+    }
+
+    function navigateDeck(deckId) {
+      const deck = state.decks.find(d => d.id === deckId);
+      if (!deck) return navigateHome();
+      nav = { view: 'deck', folderId: deck.folderId || null, deckId };
+      render();
+    }
+
+    function renderBreadcrumbs() {
+      if (nav.view === 'home') return '';
+
+      const folder = nav.folderId ? state.folders.find(f => f.id === nav.folderId) : null;
+      const deck = nav.deckId ? state.decks.find(d => d.id === nav.deckId) : null;
+
+      let crumbs = `
+        <nav aria-label="Breadcrumb" class="flex items-center flex-wrap gap-1.5 text-sm text-warmgray dark:text-espressomuted mb-5">
+          <button onclick="navigateHome()" class="min-h-[36px] px-2 -ml-2 rounded-lg hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espressosurface transition-colors font-medium">
+            All Folders
+          </button>
+      `;
+
+      if (folder) {
+        crumbs += `
+          <span class="opacity-50">/</span>
+          ${nav.view === 'folder'
+            ? `<span class="text-charcoal dark:text-warmivory font-semibold px-1.5 truncate max-w-[180px] sm:max-w-[260px]">${escapeHtml(folder.name)}</span>`
+            : `<button onclick="navigateFolder('${folder.id}')" class="min-h-[36px] px-2 rounded-lg hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espressosurface transition-colors font-medium truncate max-w-[160px] sm:max-w-[220px]">${escapeHtml(folder.name)}</button>`
+          }
+        `;
+      }
+
+      if (deck) {
+        crumbs += `
+          <span class="opacity-50">/</span>
+          ${nav.view === 'deck'
+            ? `<span class="text-charcoal dark:text-warmivory font-semibold px-1.5 truncate max-w-[180px] sm:max-w-[260px]">${escapeHtml(deck.name)}</span>`
+            : `<button onclick="navigateDeck('${deck.id}')" class="min-h-[36px] px-2 rounded-lg hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espressosurface transition-colors font-medium truncate max-w-[160px] sm:max-w-[220px]">${escapeHtml(deck.name)}</button>`
+          }
+        `;
+      }
+
+      if (nav.view === 'study') {
+        crumbs += `
+          <span class="opacity-50">/</span>
+          <span class="text-charcoal dark:text-warmivory font-semibold px-1.5">Study</span>
+        `;
+      }
+
+      crumbs += `</nav>`;
+      return crumbs;
+    }
+
+    /**
+     * ============================================================================
+     * FOLDER CRUD OPERATIONS
+     * ============================================================================
+     */
+    function openCreateFolderModal() {
+      openModal(`
+        <form onsubmit="submitCreateFolder(event)" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">New Folder</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+          <div>
+            <label for="folderNameInput" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Folder Name</label>
+            <input id="folderNameInput" type="text" required maxlength="60" placeholder="e.g., Languages, Biology, History"
+              class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory placeholder:text-warmgray/60 focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors" />
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            <button type="submit" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Create Folder</button>
+          </div>
+        </form>
+      `);
+    }
+
+    function submitCreateFolder(e) {
+      e.preventDefault();
+      const input = document.getElementById('folderNameInput');
+      const name = input.value.trim();
+      if (!name) return;
+
+      const folder = { id: uid('fld'), name, createdAt: Date.now() };
+      state.folders.unshift(folder);
+      saveState();
+      closeModal();
+      showToast('Folder created');
+      render();
+    }
+
+    function openRenameFolderModal(folderId, e) {
+      if (e) e.stopPropagation();
+      const folder = state.folders.find(f => f.id === folderId);
+      if (!folder) return;
+
+      openModal(`
+        <form onsubmit="submitRenameFolder(event, '${folder.id}')" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">Rename Folder</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+          <div>
+            <label for="renameFolderInput" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Folder Name</label>
+            <input id="renameFolderInput" type="text" required maxlength="60" value="${escapeHtml(folder.name)}"
+              class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors" />
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            <button type="submit" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Save</button>
+          </div>
+        </form>
+      `);
+    }
+
+    function submitRenameFolder(e, folderId) {
+      e.preventDefault();
+      const name = document.getElementById('renameFolderInput').value.trim();
+      if (!name) return;
+      const folder = state.folders.find(f => f.id === folderId);
+      if (folder) {
+        folder.name = name;
+        saveState();
+        showToast('Folder renamed');
+      }
+      closeModal();
+      render();
+    }
+
+    function openDeleteFolderModal(folderId, e) {
+      if (e) e.stopPropagation();
+      const folder = state.folders.find(f => f.id === folderId);
+      if (!folder) return;
+      const folderDecks = state.decks.filter(d => d.folderId === folderId);
+
+      openModal(`
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold tracking-tight">Delete "${escapeHtml(folder.name)}"?</h3>
+          <p class="text-sm text-warmgray dark:text-espressomuted leading-relaxed">
+            ${folderDecks.length > 0
+              ? `This folder contains <strong>${folderDecks.length} deck${folderDecks.length === 1 ? '' : 's'}</strong>. Choose whether to delete everything inside or move the decks to Home.`
+              : `Are you sure you want to delete this empty folder?`}
+          </p>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            ${folderDecks.length > 0 ? `
+              <button type="button" onclick="deleteFolder('${folder.id}', false)" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Keep Decks at Home</button>
+            ` : ''}
+            <button type="button" onclick="deleteFolder('${folder.id}', true)" class="min-h-[44px] px-4 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">
+              ${folderDecks.length > 0 ? 'Delete All' : 'Delete Folder'}
+            </button>
+          </div>
+        </div>
+      `);
+    }
+
+    function deleteFolder(folderId, deleteContents) {
+      if (deleteContents) {
+        const deckIdsToDelete = state.decks.filter(d => d.folderId === folderId).map(d => d.id);
+        state.cards = state.cards.filter(c => !deckIdsToDelete.includes(c.deckId));
+        state.decks = state.decks.filter(d => d.folderId !== folderId);
+      } else {
+        state.decks.forEach(d => {
+          if (d.folderId === folderId) d.folderId = null;
+        });
+      }
+      state.folders = state.folders.filter(f => f.id !== folderId);
+      saveState();
+      closeModal();
+      showToast('Folder deleted');
+      if (nav.folderId === folderId) {
+        navigateHome();
+      } else {
+        render();
+      }
+    }
+
+    /**
+     * ============================================================================
+     * DECK CRUD OPERATIONS
+     * ============================================================================
+     */
+    function openCreateDeckModal(defaultFolderId = null) {
+      const folderOptions = state.folders.map(f =>
+        `<option value="${f.id}" ${f.id === defaultFolderId ? 'selected' : ''}>${escapeHtml(f.name)}</option>`
+      ).join('');
+
+      openModal(`
+        <form onsubmit="submitCreateDeck(event)" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">New Deck</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+          <div>
+            <label for="deckNameInput" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Deck Title</label>
+            <input id="deckNameInput" type="text" required maxlength="70" placeholder="e.g., Chapter 1 Vocabulary"
+              class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory placeholder:text-warmgray/60 focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors" />
+          </div>
+          ${state.folders.length > 0 ? `
+            <div>
+              <label for="deckFolderSelect" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Folder (Optional)</label>
+              <select id="deckFolderSelect" class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors">
+                <option value="">No Folder (Top-Level Home)</option>
+                ${folderOptions}
+              </select>
+            </div>
+          ` : ''}
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            <button type="submit" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Create Deck</button>
+          </div>
+        </form>
+      `);
+    }
+
+    function submitCreateDeck(e) {
+      e.preventDefault();
+      const name = document.getElementById('deckNameInput').value.trim();
+      if (!name) return;
+      const selectEl = document.getElementById('deckFolderSelect');
+      const folderId = selectEl && selectEl.value ? selectEl.value : (nav.view === 'folder' ? nav.folderId : null);
+
+      const deck = { id: uid('dek'), folderId, name, createdAt: Date.now() };
+      state.decks.unshift(deck);
+      saveState();
+      closeModal();
+      showToast('Deck created');
+      navigateDeck(deck.id);
+    }
+
+    function openEditDeckModal(deckId, e) {
+      if (e) e.stopPropagation();
+      const deck = state.decks.find(d => d.id === deckId);
+      if (!deck) return;
+
+      const folderOptions = state.folders.map(f =>
+        `<option value="${f.id}" ${f.id === deck.folderId ? 'selected' : ''}>${escapeHtml(f.name)}</option>`
+      ).join('');
+
+      openModal(`
+        <form onsubmit="submitEditDeck(event, '${deck.id}')" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">Deck Settings</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+          <div>
+            <label for="editDeckNameInput" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Deck Title</label>
+            <input id="editDeckNameInput" type="text" required maxlength="70" value="${escapeHtml(deck.name)}"
+              class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors" />
+          </div>
+          <div>
+            <label for="editDeckFolderSelect" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Location</label>
+            <select id="editDeckFolderSelect" class="w-full min-h-[46px] px-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors">
+              <option value="" ${!deck.folderId ? 'selected' : ''}>No Folder (Top-Level Home)</option>
+              ${folderOptions}
+            </select>
+          </div>
+          <div class="flex items-center justify-between pt-2">
+            <button type="button" onclick="openDeleteDeckModal('${deck.id}')" class="min-h-[44px] px-3 rounded-xl text-sm font-medium text-warmgray hover:text-charcoal dark:hover:text-warmivory hover:bg-stonehover dark:hover:bg-espresso transition-colors">
+              Delete Deck
+            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+              <button type="submit" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Save</button>
+            </div>
+          </div>
+        </form>
+      `);
+    }
+
+    function submitEditDeck(e, deckId) {
+      e.preventDefault();
+      const name = document.getElementById('editDeckNameInput').value.trim();
+      const folderVal = document.getElementById('editDeckFolderSelect').value;
+      if (!name) return;
+
+      const deck = state.decks.find(d => d.id === deckId);
+      if (deck) {
+        deck.name = name;
+        deck.folderId = folderVal || null;
+        if (nav.view === 'deck') {
+          nav.folderId = deck.folderId;
+        }
+        saveState();
+        showToast('Deck updated');
+      }
+      closeModal();
+      render();
+    }
+
+    function openDeleteDeckModal(deckId, e) {
+      if (e) e.stopPropagation();
+      const deck = state.decks.find(d => d.id === deckId);
+      if (!deck) return;
+      const cardCount = state.cards.filter(c => c.deckId === deckId).length;
+
+      openModal(`
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold tracking-tight">Delete "${escapeHtml(deck.name)}"?</h3>
+          <p class="text-sm text-warmgray dark:text-espressomuted leading-relaxed">
+            This will permanently delete this deck${cardCount > 0 ? ` and its <strong>${cardCount} flashcard${cardCount === 1 ? '' : 's'}</strong>` : ''}.
+          </p>
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            <button type="button" onclick="deleteDeck('${deck.id}')" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Delete Deck</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function deleteDeck(deckId) {
+      const deck = state.decks.find(d => d.id === deckId);
+      const parentFolderId = deck ? deck.folderId : null;
+      state.cards = state.cards.filter(c => c.deckId !== deckId);
+      state.decks = state.decks.filter(d => d.id !== deckId);
+      saveState();
+      closeModal();
+      showToast('Deck deleted');
+
+      if (nav.deckId === deckId) {
+        if (parentFolderId) {
+          navigateFolder(parentFolderId);
+        } else {
+          navigateHome();
+        }
+      } else {
+        render();
+      }
+    }
+
+    /**
+     * ============================================================================
+     * FLASHCARD CRUD OPERATIONS
+     * ============================================================================
+     */
+    function submitQuickAddCard(e) {
+      e.preventDefault();
+      const frontInput = document.getElementById('newCardFront');
+      const backInput = document.getElementById('newCardBack');
+      const front = frontInput.value.trim();
+      const back = backInput.value.trim();
+
+      if (!front || !back) {
+        showToast('Please fill out both Front and Back');
+        return;
+      }
+
+      state.cards.push({
+        id: uid('crd'),
+        deckId: nav.deckId,
+        front,
+        back,
+        createdAt: Date.now()
+      });
+
+      saveState();
+      frontInput.value = '';
+      backInput.value = '';
+      showToast('Card added');
+      render();
+
+      // Re-focus front textarea for rapid card creation
+      setTimeout(() => {
+        const el = document.getElementById('newCardFront');
+        if (el) el.focus();
+      }, 30);
+    }
+
+    function openEditCardModal(cardId) {
+      const card = state.cards.find(c => c.id === cardId);
+      if (!card) return;
+
+      openModal(`
+        <form onsubmit="submitEditCard(event, '${card.id}')" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">Edit Flashcard</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+          <div>
+            <label for="editCardFront" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Front (Term / Prompt)</label>
+            <textarea id="editCardFront" rows="3" required
+              class="w-full p-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors resize-y">${escapeHtml(card.front)}</textarea>
+          </div>
+          <div>
+            <label for="editCardBack" class="block text-xs font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1.5">Back (Definition / Answer)</label>
+            <textarea id="editCardBack" rows="3" required
+              class="w-full p-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-charcoal dark:text-warmivory focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors resize-y">${escapeHtml(card.back)}</textarea>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors">Cancel</button>
+            <button type="submit" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity">Save Changes</button>
+          </div>
+        </form>
+      `);
+    }
+
+    function submitEditCard(e, cardId) {
+      e.preventDefault();
+      const front = document.getElementById('editCardFront').value.trim();
+      const back = document.getElementById('editCardBack').value.trim();
+      if (!front || !back) return;
+
+      const card = state.cards.find(c => c.id === cardId);
+      if (card) {
+        card.front = front;
+        card.back = back;
+        saveState();
+        showToast('Card updated');
+      }
+      closeModal();
+      render();
+    }
+
+    function deleteCard(cardId) {
+      state.cards = state.cards.filter(c => c.id !== cardId);
+      saveState();
+      showToast('Card deleted');
+      render();
+    }
+
+    /**
+     * ============================================================================
+     * STUDY MODE & SHUFFLE ENGINE
+     * ============================================================================
+     */
+    function startStudySession(deckId) {
+      const deckCards = state.cards.filter(c => c.deckId === deckId);
+      if (deckCards.length === 0) {
+        showToast('Add at least one card to study');
+        return;
+      }
+
+      study = {
+        cards: [...deckCards],
+        originalOrder: [...deckCards],
+        index: 0,
+        isFlipped: false,
+        isShuffled: false,
+        startWithBack: study.startWithBack
+      };
+
+      nav.view = 'study';
+      nav.deckId = deckId;
+      render();
+    }
+
+    function flipStudyCard() {
+      study.isFlipped = !study.isFlipped;
+      const cardInner = document.getElementById('studyCardInner');
+      if (cardInner) {
+        if (study.isFlipped) {
+          cardInner.classList.add('rotate-y-180');
+        } else {
+          cardInner.classList.remove('rotate-y-180');
+        }
+      }
+    }
+
+    function nextStudyCard() {
+      if (study.index < study.cards.length - 1) {
+        study.index++;
+        study.isFlipped = false;
+        renderStudyCardOnly();
+      } else {
+        // Gentle bounce feedback at the end
+        showToast('End of deck reached');
+      }
+    }
+
+    function prevStudyCard() {
+      if (study.index > 0) {
+        study.index--;
+        study.isFlipped = false;
+        renderStudyCardOnly();
+      }
+    }
+
+    function restartStudySession() {
+      study.index = 0;
+      study.isFlipped = false;
+      renderStudyCardOnly();
+      showToast('Restarted from card 1');
+    }
+
+    // Fisher-Yates unbiased shuffle
+    function fisherYatesShuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function toggleShuffleStudy() {
+      if (!study.isShuffled) {
+        study.cards = fisherYatesShuffle(study.originalOrder);
+        study.isShuffled = true;
+        study.index = 0;
+        study.isFlipped = false;
+        showToast('Deck shuffled');
+      } else {
+        study.cards = [...study.originalOrder];
+        study.isShuffled = false;
+        study.index = 0;
+        study.isFlipped = false;
+        showToast('Original order restored');
+      }
+      render();
+    }
+
+    function reshuffleStudy() {
+      study.cards = fisherYatesShuffle(study.originalOrder);
+      study.isShuffled = true;
+      study.index = 0;
+      study.isFlipped = false;
+      showToast('Reshuffled');
+      render();
+    }
+
+    function toggleStartSide() {
+      study.startWithBack = !study.startWithBack;
+      study.isFlipped = false;
+      showToast(study.startWithBack ? 'Showing Back first' : 'Showing Front first');
+      render();
+    }
+
+    // Keyboard shortcuts during study mode
+    document.addEventListener('keydown', (e) => {
+      // Ignore if modal is open or user is typing in an input/textarea
+      const modalOpen = !document.getElementById('modalBackdrop').classList.contains('hidden');
+      const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (modalOpen || tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      if (nav.view === 'study') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          flipStudyCard();
+        } else if (e.code === 'ArrowRight') {
+          e.preventDefault();
+          nextStudyCard();
+        } else if (e.code === 'ArrowLeft') {
+          e.preventDefault();
+          prevStudyCard();
+        }
+      }
+    });
+
+    // Touch Swipe Gesture Handling for Study Card
+    let touchStartX = 0;
+    let touchStartY = 0;
+    function handleCardTouchStart(e) {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }
+    function handleCardTouchEnd(e) {
+      const touchEndX = e.changedTouches[0].screenX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const dx = touchEndX - touchStartX;
+      const dy = touchEndY - touchStartY;
+
+      // Horizontal swipe threshold (45px) and ensure predominantly horizontal
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        if (dx < 0) {
+          nextStudyCard();
+        } else {
+          prevStudyCard();
+        }
+      }
+    }
+
+    /**
+     * ============================================================================
+     * BACKUP / EXPORT / IMPORT MODAL
+     * ============================================================================
+     */
+    function openSettingsModal() {
+      const totalFolders = state.folders.length;
+      const totalDecks = state.decks.length;
+      const totalCards = state.cards.length;
+
+      openModal(`
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold tracking-tight">Library & Backup</h3>
+            <button type="button" onclick="closeModal()" class="w-9 h-9 rounded-lg flex items-center justify-center text-warmgray hover:text-charcoal dark:hover:text-warmivory">✕</button>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone flex items-center justify-around text-center">
+            <div>
+              <div class="text-lg font-semibold">${totalFolders}</div>
+              <div class="text-xs text-warmgray dark:text-espressomuted">Folders</div>
+            </div>
+            <div class="h-7 w-px bg-stoneborder dark:bg-espressostone"></div>
+            <div>
+              <div class="text-lg font-semibold">${totalDecks}</div>
+              <div class="text-xs text-warmgray dark:text-espressomuted">Decks</div>
+            </div>
+            <div class="h-7 w-px bg-stoneborder dark:bg-espressostone"></div>
+            <div>
+              <div class="text-lg font-semibold">${totalCards}</div>
+              <div class="text-xs text-warmgray dark:text-espressomuted">Cards</div>
+            </div>
+          </div>
+
+          <p class="text-xs text-warmgray dark:text-espressomuted leading-relaxed">
+            Your flashcards are saved automatically in this browser. Export a JSON backup file anytime to keep a copy or transfer to another device.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button type="button" onclick="exportBackupJSON()" class="min-h-[44px] px-4 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export JSON
+            </button>
+
+            <label class="min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone text-sm font-medium hover:bg-stonehover dark:hover:bg-espresso transition-colors flex items-center justify-center gap-2 cursor-pointer">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Import JSON
+              <input type="file" accept=".json,application/json" class="hidden" onchange="importBackupJSON(event)" />
+            </label>
+          </div>
+        </div>
+      `);
+    }
+
+    function exportBackupJSON() {
+      const payload = {
+        app: 'Flashcards',
+        exportedAt: new Date().toISOString(),
+        data: state
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `folio-flashcards-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Backup exported');
+    }
+
+    function importBackupJSON(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          const imported = parsed.data ? parsed.data : parsed;
+          if (!Array.isArray(imported.folders) || !Array.isArray(imported.decks) || !Array.isArray(imported.cards)) {
+            throw new Error('Invalid format');
+          }
+          state.folders = imported.folders;
+          state.decks = imported.decks;
+          state.cards = imported.cards;
+          saveState();
+          closeModal();
+          navigateHome();
+          showToast('Backup restored successfully');
+        } catch (err) {
+          showToast('Invalid JSON backup file');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /**
+     * ============================================================================
+     * VIEW RENDERERS
+     * ============================================================================
+     */
+    function render() {
+      const container = document.getElementById('appContainer');
+      if (nav.view === 'home') {
+        container.innerHTML = renderHomeView();
+      } else if (nav.view === 'folder') {
+        container.innerHTML = renderFolderView();
+      } else if (nav.view === 'deck') {
+        container.innerHTML = renderDeckView();
+      } else if (nav.view === 'study') {
+        container.innerHTML = renderStudyView();
+      }
+    }
+
+    // 1. HOME VIEW (Folders + Top-Level Decks + Blank Slate)
+    function renderHomeView() {
+      const topDecks = state.decks.filter(d => !d.folderId);
+      const isCompletelyEmpty = state.folders.length === 0 && topDecks.length === 0;
+
+      if (isCompletelyEmpty) {
+        return `
+          <div class="flex-1 flex flex-col items-center justify-center text-center py-12 px-4">
+            <div class="w-16 h-16 rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone shadow-sm flex items-center justify-center mb-5 text-charcoal dark:text-warmivory">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="14" height="14" rx="2.5"></rect>
+                <path d="M7 3h12a2 2 0 0 1 2 2v12"></path>
+                <line x1="10" y1="9" x2="10" y2="15"></line>
+                <line x1="7" y1="12" x2="13" y2="12"></line>
+              </svg>
+            </div>
+            <h1 class="text-2xl font-semibold tracking-tight mb-2">Your blank study slate</h1>
+            <p class="text-warmgray dark:text-espressomuted text-sm sm:text-base max-w-md mb-8 leading-relaxed">
+              Create folders to organize subjects or start directly with a flashcard deck. Everything stays saved on your device.
+            </p>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-xs sm:max-w-md justify-center">
+              <button onclick="openCreateFolderModal()" class="min-h-[48px] px-5 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-charcoal dark:text-warmivory text-sm font-semibold hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale flex items-center justify-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                New Folder
+              </button>
+              <button onclick="openCreateDeckModal()" class="min-h-[48px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 tap-scale flex items-center justify-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                New Deck
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="space-y-8">
+          <!-- Page Header & Quick Create Actions -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Library</h1>
+              <p class="text-sm text-warmgray dark:text-espressomuted mt-0.5">Organize your decks and study sets</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <button onclick="openCreateFolderModal()" class="flex-1 sm:flex-initial min-h-[44px] px-4 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-medium hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 text-warmgray dark:text-espressomuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                New Folder
+              </button>
+              <button onclick="openCreateDeckModal()" class="flex-1 sm:flex-initial min-h-[44px] px-4 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 tap-scale flex items-center justify-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                New Deck
+              </button>
+            </div>
+          </div>
+
+          <!-- Folders Section -->
+          ${state.folders.length > 0 ? `
+            <section class="space-y-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-warmgray dark:text-espressomuted">Folders (${state.folders.length})</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${state.folders.map(folder => {
+                  const deckCount = state.decks.filter(d => d.folderId === folder.id).length;
+                  return `
+                    <div onclick="navigateFolder('${folder.id}')" class="group p-4 rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone hover:border-charcoal/40 dark:hover:border-warmivory/40 tap-scale cursor-pointer flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(28,27,24,0.03)]">
+                      <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone flex items-center justify-center shrink-0 text-charcoal dark:text-warmivory">
+                          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </div>
+                        <div class="min-w-0">
+                          <h3 class="font-semibold text-base truncate">${escapeHtml(folder.name)}</h3>
+                          <p class="text-xs text-warmgray dark:text-espressomuted mt-0.5">${deckCount} ${deckCount === 1 ? 'deck' : 'decks'}</p>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-0.5 shrink-0">
+                        <button onclick="openRenameFolderModal('${folder.id}', event)" class="w-10 h-10 rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Rename Folder" aria-label="Rename Folder">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                        </button>
+                        <button onclick="openDeleteFolderModal('${folder.id}', event)" class="w-10 h-10 rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Delete Folder" aria-label="Delete Folder">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </section>
+          ` : ''}
+
+          <!-- Top-Level Uncategorized Decks Section -->
+          ${topDecks.length > 0 ? `
+            <section class="space-y-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-warmgray dark:text-espressomuted">
+                ${state.folders.length > 0 ? `Standalone Decks (${topDecks.length})` : `Decks (${topDecks.length})`}
+              </h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${topDecks.map(deck => renderDeckCardItem(deck)).join('')}
+              </div>
+            </section>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // Reusable Deck Card Tile for Home & Folder views
+    function renderDeckCardItem(deck) {
+      const cardCount = state.cards.filter(c => c.deckId === deck.id).length;
+      return `
+        <div onclick="navigateDeck('${deck.id}')" class="group p-4 rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone hover:border-charcoal/40 dark:hover:border-warmivory/40 tap-scale cursor-pointer flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(28,27,24,0.03)]">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone flex items-center justify-center shrink-0 text-charcoal dark:text-warmivory">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="6" width="14" height="14" rx="2"></rect>
+                <path d="M8 3h11a2 2 0 0 1 2 2v11"></path>
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-semibold text-base truncate">${escapeHtml(deck.name)}</h3>
+              <p class="text-xs text-warmgray dark:text-espressomuted mt-0.5">${cardCount} ${cardCount === 1 ? 'card' : 'cards'}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-0.5 shrink-0">
+            <button onclick="openEditDeckModal('${deck.id}', event)" class="w-10 h-10 rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Deck Settings & Move" aria-label="Deck Settings">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            </button>
+            <button onclick="openDeleteDeckModal('${deck.id}', event)" class="w-10 h-10 rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Delete Deck" aria-label="Delete Deck">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. FOLDER VIEW
+    function renderFolderView() {
+      const folder = state.folders.find(f => f.id === nav.folderId);
+      if (!folder) return renderHomeView();
+      const decks = state.decks.filter(d => d.folderId === folder.id);
+
+      return `
+        <div>
+          ${renderBreadcrumbs()}
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div class="min-w-0">
+              <h1 class="text-2xl font-semibold tracking-tight truncate">${escapeHtml(folder.name)}</h1>
+              <p class="text-sm text-warmgray dark:text-espressomuted mt-0.5">${decks.length} ${decks.length === 1 ? 'deck' : 'decks'} in folder</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openRenameFolderModal('${folder.id}')" class="min-h-[44px] px-3.5 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-medium hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale">
+                Rename
+              </button>
+              <button onclick="openCreateDeckModal('${folder.id}')" class="min-h-[44px] px-4 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 tap-scale flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                New Deck
+              </button>
+            </div>
+          </div>
+
+          ${decks.length === 0 ? `
+            <div class="rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone p-10 text-center">
+              <p class="text-base font-medium mb-1">This folder is empty</p>
+              <p class="text-sm text-warmgray dark:text-espressomuted mb-5">Create a flashcard deck inside "${escapeHtml(folder.name)}" to begin.</p>
+              <button onclick="openCreateDeckModal('${folder.id}')" class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 tap-scale inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Create First Deck
+              </button>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${decks.map(deck => renderDeckCardItem(deck)).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // 3. DECK VIEW (Manage Cards + Study CTA)
+    function renderDeckView() {
+      const deck = state.decks.find(d => d.id === nav.deckId);
+      if (!deck) return renderHomeView();
+      const cards = state.cards.filter(c => c.deckId === deck.id);
+
+      return `
+        <div>
+          ${renderBreadcrumbs()}
+
+          <!-- Deck Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div class="min-w-0">
+              <h1 class="text-2xl font-semibold tracking-tight truncate">${escapeHtml(deck.name)}</h1>
+              <p class="text-sm text-warmgray dark:text-espressomuted mt-0.5">${cards.length} ${cards.length === 1 ? 'flashcard' : 'flashcards'}</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <button onclick="openEditDeckModal('${deck.id}')" class="min-h-[44px] px-3.5 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-medium hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale">
+                Move / Rename
+              </button>
+              <button onclick="startStudySession('${deck.id}')" ${cards.length === 0 ? 'disabled' : ''}
+                class="min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed tap-scale flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Study Deck
+              </button>
+            </div>
+          </div>
+
+          <!-- Add New Flashcard Composer -->
+          <form onsubmit="submitQuickAddCard(event)" class="p-4 sm:p-5 rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone shadow-[0_1px_3px_rgba(28,27,24,0.04)] mb-7">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wider text-warmgray dark:text-espressomuted">Add Flashcard</span>
+              <span class="text-xs text-warmgray/70 dark:text-espressomuted/70 hidden sm:inline">Multi-line supported</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3.5">
+              <div>
+                <label for="newCardFront" class="sr-only">Front</label>
+                <textarea id="newCardFront" rows="2" required placeholder="Front (Term or Prompt)"
+                  class="w-full p-3 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-sm text-charcoal dark:text-warmivory placeholder:text-warmgray/60 focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors resize-y"></textarea>
+              </div>
+              <div>
+                <label for="newCardBack" class="sr-only">Back</label>
+                <textarea id="newCardBack" rows="2" required placeholder="Back (Definition or Answer)"
+                  class="w-full p-3 rounded-xl bg-alabaster dark:bg-espresso border border-stoneborder dark:border-espressostone text-sm text-charcoal dark:text-warmivory placeholder:text-warmgray/60 focus:outline-none focus:border-charcoal dark:focus:border-warmivory transition-colors resize-y"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" class="w-full sm:w-auto min-h-[44px] px-5 rounded-xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 tap-scale flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Card
+              </button>
+            </div>
+          </form>
+
+          <!-- Cards List -->
+          ${cards.length === 0 ? `
+            <div class="text-center py-10 px-4 rounded-2xl border border-dashed border-stoneborder dark:border-espressostone">
+              <p class="text-sm font-medium text-charcoal dark:text-warmivory">No cards in this deck yet</p>
+              <p class="text-xs text-warmgray dark:text-espressomuted mt-1">Use the form above to create your first flashcard.</p>
+            </div>
+          ` : `
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-warmgray dark:text-espressomuted">Cards in Deck (${cards.length})</h2>
+              </div>
+              <div class="space-y-2.5">
+                ${cards.map((card, idx) => `
+                  <div class="p-4 rounded-2xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 min-w-0">
+                      <div class="min-w-0">
+                        <div class="text-[11px] font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1">Front · #${idx + 1}</div>
+                        <div class="text-sm font-medium whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(card.front)}</div>
+                      </div>
+                      <div class="pt-2.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-stoneborder dark:border-espressostone sm:pl-5 min-w-0">
+                        <div class="text-[11px] font-medium uppercase tracking-wider text-warmgray dark:text-espressomuted mb-1">Back</div>
+                        <div class="text-sm text-charcoal/90 dark:text-warmivory/90 whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(card.back)}</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-1 shrink-0 pt-1 sm:pt-0">
+                      <button onclick="openEditCardModal('${card.id}')" class="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Edit Card" aria-label="Edit Card">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                      </button>
+                      <button onclick="deleteCard('${card.id}')" class="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-warmgray dark:text-espressomuted hover:text-charcoal dark:hover:text-warmivory hover:bg-alabaster dark:hover:bg-espresso transition-colors" title="Delete Card" aria-label="Delete Card">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // 4. STUDY MODE VIEW (3D Flip, Shuffle, Orientation Toggle, Swipe)
+    function renderStudyView() {
+      const deck = state.decks.find(d => d.id === nav.deckId);
+      if (!deck || study.cards.length === 0) {
+        navigateDeck(nav.deckId);
+        return '';
+      }
+
+      const total = study.cards.length;
+      const current = study.cards[study.index];
+      const primaryLabel = study.startWithBack ? 'Back' : 'Front';
+      const secondaryLabel = study.startWithBack ? 'Front' : 'Back';
+      const primaryText = study.startWithBack ? current.back : current.front;
+      const secondaryText = study.startWithBack ? current.front : current.back;
+      const progressPct = Math.round(((study.index + 1) / total) * 100);
+
+      return `
+        <div class="flex-1 flex flex-col">
+          ${renderBreadcrumbs()}
+
+          <!-- Top Study Controls Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <button onclick="navigateDeck('${deck.id}')" class="min-h-[44px] px-3.5 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-medium hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale inline-flex items-center gap-1.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              Done
+            </button>
+
+            <div class="flex items-center gap-2">
+              <!-- Start Side Toggle (Front first / Back first) -->
+              <button onclick="toggleStartSide()" class="min-h-[44px] px-3.5 rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-xs sm:text-sm font-medium hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale inline-flex items-center gap-1.5" title="Switch which side shows first">
+                <svg class="w-4 h-4 text-warmgray dark:text-espressomuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                ${study.startWithBack ? 'Back First' : 'Front First'}
+              </button>
+
+              <!-- Shuffle Toggle -->
+              <button onclick="toggleShuffleStudy()" class="min-h-[44px] px-3.5 rounded-xl border text-xs sm:text-sm font-medium tap-scale inline-flex items-center gap-1.5 transition-colors ${
+                study.isShuffled
+                  ? 'bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso border-charcoal dark:border-warmivory'
+                  : 'bg-warmwhite dark:bg-espressosurface text-charcoal dark:text-warmivory border-stoneborder dark:border-espressostone hover:bg-stonehover dark:hover:bg-espressostone/40'
+              }" title="Toggle Shuffle">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                ${study.isShuffled ? 'Shuffled' : 'Shuffle'}
+              </button>
+
+              ${study.isShuffled ? `
+                <button onclick="reshuffleStudy()" class="min-w-[44px] min-h-[44px] rounded-xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale flex items-center justify-center" title="Reshuffle Cards" aria-label="Reshuffle Cards">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Progress Counter & Bar -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between text-xs font-medium text-warmgray dark:text-espressomuted mb-2">
+              <span id="studyCounterText">Card ${study.index + 1} of ${total}</span>
+              <button onclick="restartStudySession()" class="hover:text-charcoal dark:hover:text-warmivory transition-colors">Restart</button>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-stoneborder dark:bg-espressostone overflow-hidden">
+              <div id="studyProgressBar" class="h-full bg-charcoal dark:bg-warmivory transition-all duration-300 rounded-full" style="width: ${progressPct}%"></div>
+            </div>
+          </div>
+
+          <!-- 3D Interactive Flashcard Stage -->
+          <div id="studyStage" class="flex-1 flex flex-col justify-center my-1">
+            <div onclick="flipStudyCard()" ontouchstart="handleCardTouchStart(event)" ontouchend="handleCardTouchEnd(event)"
+              class="study-swipe-zone perspective-1200 w-full cursor-pointer select-none">
+              <div id="studyCardInner" class="relative w-full min-h-[300px] sm:min-h-[360px] transform-style-3d flip-transition ${study.isFlipped ? 'rotate-y-180' : ''}">
+                
+                <!-- Card Primary Face -->
+                <div class="backface-hidden absolute inset-0 rounded-3xl bg-warmwhite dark:bg-espressosurface border border-stoneborder dark:border-espressostone shadow-[0_8px_28px_rgba(28,27,24,0.06)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.35)] p-6 sm:p-10 flex flex-col justify-between">
+                  <div class="flex items-center justify-between">
+                    <span id="cardPrimaryTag" class="text-xs font-semibold uppercase tracking-widest text-warmgray dark:text-espressomuted">${primaryLabel}</span>
+                    <span class="text-xs text-warmgray/60 dark:text-espressomuted/60">Tap to flip</span>
+                  </div>
+                  <div class="my-auto py-4 flex items-center justify-center text-center overflow-y-auto max-h-[230px]">
+                    <p id="cardPrimaryContent" class="text-xl sm:text-2xl font-medium leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(primaryText)}</p>
+                  </div>
+                  <div class="h-4"></div>
+                </div>
+
+                <!-- Card Secondary Face (Flipped) -->
+                <div class="backface-hidden rotate-y-180 absolute inset-0 rounded-3xl bg-warmwhite dark:bg-espressosurface border-2 border-charcoal/20 dark:border-warmivory/25 shadow-[0_8px_28px_rgba(28,27,24,0.08)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.4)] p-6 sm:p-10 flex flex-col justify-between">
+                  <div class="flex items-center justify-between">
+                    <span id="cardSecondaryTag" class="text-xs font-semibold uppercase tracking-widest text-charcoal dark:text-warmivory">${secondaryLabel}</span>
+                    <span class="text-xs text-warmgray/60 dark:text-espressomuted/60">Tap to flip</span>
+                  </div>
+                  <div class="my-auto py-4 flex items-center justify-center text-center overflow-y-auto max-h-[230px]">
+                    <p id="cardSecondaryContent" class="text-xl sm:text-2xl font-normal leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(secondaryText)}</p>
+                  </div>
+                  <div class="h-4"></div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Controls (Previous / Flip / Next) -->
+          <div class="pt-6 pb-2 flex items-center justify-between gap-3">
+            <button id="prevCardBtn" onclick="prevStudyCard()" ${study.index === 0 ? 'disabled' : ''}
+              class="flex-1 min-h-[52px] px-4 rounded-2xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-semibold hover:bg-stonehover dark:hover:bg-espressostone/40 disabled:opacity-35 disabled:cursor-not-allowed tap-scale flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              Prev
+            </button>
+
+            <button onclick="flipStudyCard()"
+              class="min-h-[52px] px-6 rounded-2xl border border-stoneborder dark:border-espressostone bg-warmwhite dark:bg-espressosurface text-sm font-semibold hover:bg-stonehover dark:hover:bg-espressostone/40 tap-scale flex items-center justify-center gap-2">
+              Flip
+            </button>
+
+            <button id="nextCardBtn" onclick="nextStudyCard()" ${study.index === total - 1 ? 'disabled' : ''}
+              class="flex-1 min-h-[52px] px-4 rounded-2xl bg-charcoal dark:bg-warmivory text-warmwhite dark:text-espresso text-sm font-semibold hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed tap-scale flex items-center justify-center gap-2 shadow-sm">
+              Next
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          <p class="text-center text-[11px] text-warmgray/75 dark:text-espressomuted/75 mt-2">
+            Swipe left/right or use arrow keys to navigate · Space to flip
+          </p>
+        </div>
+      `;
+    }
+
+    // Fast DOM update when stepping between cards so flip state resets cleanly without flicker
+    function renderStudyCardOnly() {
+      const total = study.cards.length;
+      const current = study.cards[study.index];
+      const primaryText = study.startWithBack ? current.back : current.front;
+      const secondaryText = study.startWithBack ? current.front : current.back;
+      const progressPct = Math.round(((study.index + 1) / total) * 100);
+
+      const cardInner = document.getElementById('studyCardInner');
+      if (cardInner) {
+        // Temporarily disable transition while resetting flip to front on card change
+        cardInner.classList.remove('flip-transition', 'rotate-y-180');
+        void cardInner.offsetWidth; // Force reflow
+        cardInner.classList.add('flip-transition');
+      }
+
+      document.getElementById('cardPrimaryContent').textContent = primaryText;
+      document.getElementById('cardSecondaryContent').textContent = secondaryText;
+      document.getElementById('studyCounterText').textContent = `Card ${study.index + 1} of ${total}`;
+      document.getElementById('studyProgressBar').style.width = `${progressPct}%`;
+
+      const prevBtn = document.getElementById('prevCardBtn');
+      const nextBtn = document.getElementById('nextCardBtn');
+      if (prevBtn) prevBtn.disabled = study.index === 0;
+      if (nextBtn) nextBtn.disabled = study.index === total - 1;
+    }
+
+    /**
+     * ============================================================================
+     * INITIALIZATION
+     * ============================================================================
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadState();
+      render();
+    });
+  </script>
+</body>
+</html>
